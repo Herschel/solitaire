@@ -9,6 +9,11 @@ import openfl.text.TextFormat;
 import solitaire.model.*;
 import solitaire.events.*;
 
+typedef Foo = {
+    var a: Int;
+    var b: Int;
+}
+
 class CardSprite extends Sprite {
     public static inline var WIDTH = 125 / 2.0;
     public static inline var HEIGHT = 175 / 2.0;
