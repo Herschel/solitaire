@@ -8,6 +8,8 @@ import solitaire.model.CardPile;
 
 class CardEvent extends Event {
     public static inline var CLICK: String = "cardClick";
+    public static inline var MOUSE_DOWN: String = "cardMouseDown";
+    public static inline var MOUSE_UP: String = "cardMouseUp";
 
     public function new( eventType: String, ?cardSprite: CardSprite, ?pileSprite: CardPileSprite ) {
         super( eventType, true );

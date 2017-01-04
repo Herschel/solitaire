@@ -70,6 +70,8 @@ class CardSprite extends Sprite {
         card.addEventListener( Event.CHANGE, onCardChange );
 
         addEventListener( MouseEvent.CLICK, onClick );
+        addEventListener( MouseEvent.MOUSE_DOWN, onMouseDown );
+        addEventListener( MouseEvent.MOUSE_UP, onMouseUp );
     }
 
     function onCardChange( _ ) {
@@ -98,5 +100,13 @@ class CardSprite extends Sprite {
     function onClick( event ) {
         dispatchEvent( new CardEvent( CardEvent.CLICK, this ) );
         event.stopImmediatePropagation();
+    }
+
+    function onMouseUp( event ) {
+        dispatchEvent( new CardEvent( CardEvent.MOUSE_UP, this ) );
+    }
+
+    function onMouseDown( event ) {
+        dispatchEvent( new CardEvent( CardEvent.MOUSE_DOWN, this ) ); 
     }
 }

@@ -1,8 +1,9 @@
 package solitaire;
 
 import openfl.Assets;
-import openfl.display.Sprite;
+import openfl.display.*;
 import openfl.events.*;
+import openfl.geom.Point;
 import openfl.text.*;
 import solitaire.display.*;
 import solitaire.events.*;
@@ -29,26 +30,11 @@ class Main extends Sprite {
     var victoryTimer: Int;
     var victorySprites: Array<{card: CardSprite, vx: Float, vy: Float}> = [];
 
-    var selection(default, set): Array<CardSprite>;
-    inline function set_selection( v: Array<CardSprite> ) {
-        if( selection != null ) {
-            for( cardSprite in selection ) {
-                cardSprite.filters = [];
-            }
-        }
-
-        if( v == null ) {
-            v = [];
-        }
-
-        selection = v;
-        for( cardSprite in v ) {
-            cardSprite.filters = [ new openfl.filters.GlowFilter(0xffff00, 1.0, 10, 10, 100) ];
-        }
-
-        return v;
-    }
-
+    // Dragging controls.
+    var draggingCards: Array<DragCard>;
+    var dragSprite: Sprite;
+    var dragX: Float;
+    var dragY: Float;
 
     public function new() {
         super();
@@ -56,8 +42,6 @@ class Main extends Sprite {
         stage.frameRate = 60;
 
         createLog();
-
-        selection = [];
 
         var deck = CardPile.standardDeck();
         deck.shuffle();
@@ -114,8 +98,6 @@ class Main extends Sprite {
             addChild( foundationSprite );
             foundationSprites.push( foundationSprite );
 
-            foundationSprite.addEventListener( CardEvent.CLICK, onFoundationClick );
-
             // Add suit icon to foundation art.
             var textColor = switch( suit ) {
                 case Hearts, Diamonds:  0xffff0000;
@@ -135,10 +117,10 @@ class Main extends Sprite {
         }
 
         stockSprite.addEventListener( CardEvent.CLICK, onStockClick );
-        wasteSprite.addEventListener( CardEvent.CLICK, onWasteClick );
+        wasteSprite.addEventListener( CardEvent.MOUSE_DOWN, onWasteMouseDown );
         for( i in 0...NUM_PILES ) {
             var pileSprite = pileSprites[i];
-            pileSprite.addEventListener( CardEvent.CLICK, onPileClick );
+            pileSprite.addEventListener( CardEvent.MOUSE_DOWN, onPileMouseDown );
         }
 
         addEventListener( Event.ENTER_FRAME, onEnterFrame );
@@ -159,13 +141,13 @@ class Main extends Sprite {
         }
     }
 
-    function onWasteClick( _ ) {
-        if( waste.numCards > 0 ) {
-            selection = [ wasteSprite.peekSprite( 0 ) ];
+    function onWasteMouseDown( event: CardEvent ) {
+        if( event.cardIndex == 0 ) {
+            dragCards( [event.cardSprite] );
         }
     }
 
-    function onPileClick( event: CardEvent ) {
+    function onPileMouseDown( event: CardEvent ) {
         var pileSprite = event.pileSprite;
         var pile = event.pile;
 
@@ -178,55 +160,31 @@ class Main extends Sprite {
             return;
         }
 
-        var selectionPile = null;
-        if( selection.length > 0 ) {
-            if( selection[0].parent != null && Std.is( selection[0].parent, CardPileSprite ) ) {
-                var selectionPileSprite = cast selection[0].parent;
-                selectionPile = selectionPileSprite.pile;
+        // Check if clicked card and all following cards are sequential.
+        var i = event.cardIndex;
+        while( i > 0 ) {
+            if( !areCardsSequential( pile.peek( i ), pile.peek( i - 1 ) ) ) {
+                return;
             }
+            i--;
         }
 
-        if( selectionPile != pile && selection.length > 0 && areCardsSequential( card, selection[0].card ) ) {
-            // Trying to move a sequence of cards onto this card.
-            // Check if this card can precede the sequence.
-
-            
-            if( selectionPile != null ) {
-                for( i in 0...selection.length ) {
-                    selectionPile.deal();
-                    pile.addCard( selection[i].card );
-                }
-            }
-
-        } else {
-
-            // Check if clicked card and all following cards are sequential.
-            var i = event.cardIndex;
-            while( i > 0 ) {
-                if( !areCardsSequential( pile.peek( i ), pile.peek( i - 1 ) ) ) {
-                    return;
-                }
-                i--;
-            }
-
-            // If they're sequential, then select the entire sequnce of cards.
-            var selection = [];
-            for( i in 0...event.cardIndex + 1 ) {
-                selection.push( pileSprite.peekSprite( event.cardIndex - i ) );
-            }
-            this.selection = selection;
+        // If they're sequential, then select the entire sequnce of cards.
+        var draggedCards = [];
+        for( i in 0...event.cardIndex + 1 ) {
+            draggedCards.push( pileSprite.peekSprite( event.cardIndex - i ) );
         }
+        dragCards( draggedCards );
     }
 
-    function onFoundationClick( event: CardEvent ) {
-        var foundation = event.pile;
-        var foundationSprite = event.pileSprite;
+    function onFoundationEndDrag( foundationSprite: CardPileSprite ) {
+        var foundation = foundationSprite.pile;
 
         var suit = Type.createEnumIndex( CardSuit, foundationSprites.indexOf( foundationSprite ) );
 
-        if( selection.length == 1  && selection[0].card.suit == suit ) {
-            var cardSprite = selection[0];
-            var card = selection[0].card;
+        if( draggingCards.length == 1  && draggingCards[0].card.card.suit == suit ) {
+            var cardSprite = draggingCards[0].card;
+            var card = cardSprite.card;
             var foundationCard = foundation.peek( 0 );
             var allowMove = if( foundationCard != null ) {
                 switch( foundationCard.rank ) {
@@ -247,13 +205,92 @@ class Main extends Sprite {
             } else { card.rank == Ace; };
 
             if( allowMove ) {
-                var selectionPile = null;
-                if( cardSprite.parent != null && Std.is( cardSprite.parent, CardPileSprite ) ) {
-                    var selectionPileSprite = cast cardSprite.parent;
-                    selectionPile = selectionPileSprite.pile;
-                }
-                selectionPile.deal();
+                draggingCards[0].parentPile.deal();
                 foundation.addCard( card );
+            }
+        }
+    }
+
+    function dragCards( cards: Array<CardSprite> ) {
+        dragSprite = new Sprite();
+        stage.addChild( dragSprite );
+
+        draggingCards = [];
+        for( card in cards ) {
+            draggingCards.push({
+                initialX: card.x,
+                initialY: card.y,
+                initialParent: card.parent,
+                parentPile: cast( card.parent, CardPileSprite ).pile,
+                card: card,
+            });
+            var cardPoint = new flash.geom.Point( card.x, card.y );
+            cardPoint = card.parent.localToGlobal( cardPoint );
+            card.x = cardPoint.x;
+            card.y = cardPoint.y;
+            dragSprite.addChild( card );
+        }
+
+        dragX = stage.mouseX;
+        dragY = stage.mouseY;
+
+        stage.addEventListener( MouseEvent.MOUSE_MOVE, onDragMove );
+        stage.addEventListener( MouseEvent.MOUSE_UP, onDragEnd );
+    }
+
+    function onDragMove( event: MouseEvent ) {
+        for( card in draggingCards ) {
+            card.card.x += stage.mouseX - dragX;
+            card.card.y += stage.mouseY - dragY;
+        }
+
+        dragX = stage.mouseX;
+        dragY = stage.mouseY;
+    }
+
+    function onDragEnd( _ ) {
+        var topCard = draggingCards[0];
+        if( topCard != null ) {
+            for( card in draggingCards ) {
+                card.initialParent.addChild( card.card );
+                card.card.x = card.initialX;
+                card.card.y = card.initialY;
+            }
+
+            var objects = getObjectsUnderPoint( new Point( mouseX, mouseY ) );
+            for( object in objects ) {
+                if( Std.is( object, CardPileSprite ) ) {
+                    var pileSprite: CardPileSprite = cast object;
+                    if( pileSprites.indexOf( pileSprite ) != -1 ) {
+                        onPileEndDrag( pileSprite );
+                    } else if( foundationSprites.indexOf( pileSprite ) != -1 ) {
+                        onFoundationEndDrag( pileSprite );
+                    }
+                } else if( Std.is( object, CardSprite ) && Std.is( object.parent, CardPileSprite ) ) {
+                    var pileSprite: CardPileSprite = cast object.parent;
+                    if( pileSprites.indexOf( pileSprite ) != -1 ) {
+                        onPileEndDrag( pileSprite );
+                    } else if( foundationSprites.indexOf( pileSprite ) != -1 ) {
+                        onFoundationEndDrag( pileSprite );
+                    }
+                }
+            }
+        }
+
+        stage.removeEventListener( MouseEvent.MOUSE_MOVE, onDragMove );
+        stage.removeEventListener( MouseEvent.MOUSE_UP, onDragEnd );
+    }
+
+    function onPileEndDrag( pileSprite: CardPileSprite ) {
+        var cardSprite = draggingCards[0].card;
+        var parentPile = draggingCards[0].parentPile;
+        var card = cardSprite.card;
+        if( cardSprite != null ) {
+            if( areCardsSequential( pileSprite.peek( 0 ), card ) ) {
+                for( i in 0...draggingCards.length ) {
+                    parentPile.deal();
+                    pileSprite.pile.addCard( draggingCards[i].card.card );
+                }
             }
         }
     }
@@ -351,3 +388,12 @@ class Main extends Sprite {
 
     static var logTextField: TextField;
 }
+
+// Stores the initial position of dragged cards.
+typedef DragCard = {
+    initialX: Float,
+    initialY: Float,
+    initialParent: DisplayObjectContainer,
+    parentPile: Null<CardPile>,
+    card: CardSprite,
+};
