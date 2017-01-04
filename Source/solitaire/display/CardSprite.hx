@@ -13,6 +13,8 @@ class CardSprite extends Sprite {
     public static inline var WIDTH = 125 / 2.0;
     public static inline var HEIGHT = 175 / 2.0;
 
+    public static inline var FONT = "fonts/arial.ttf";
+
     public var card(default, null): Card;
 
     var textField1: TextField;
@@ -36,7 +38,7 @@ class CardSprite extends Sprite {
         var text = card.toString();
 
         textField1 = new TextField();
-        textField1.defaultTextFormat = new TextFormat( Assets.getFont("fonts/arial.ttf").fontName, 20, textColor );
+        textField1.defaultTextFormat = new TextFormat( Assets.getFont(FONT).fontName, 20, textColor );
         textField1.embedFonts = true;
         textField1.text = text;
         textField1.selectable = false;
@@ -47,7 +49,7 @@ class CardSprite extends Sprite {
         addChild( textField1 );
 
         textField2 = new TextField();
-        textField2.defaultTextFormat = new TextFormat( Assets.getFont("fonts/arial.ttf").fontName, 20, textColor );
+        textField2.defaultTextFormat = new TextFormat( Assets.getFont(FONT).fontName, 20, textColor );
         textField2.embedFonts = true;
         textField2.text = text;
         textField2.selectable = false;

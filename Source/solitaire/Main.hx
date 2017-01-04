@@ -124,7 +124,7 @@ class Main extends Sprite {
 
             var textField = new TextField();
             textField.autoSize = TextFieldAutoSize.CENTER;
-            textField.defaultTextFormat = new TextFormat( Assets.getFont("fonts/arial.ttf").fontName, 20, textColor );
+            textField.defaultTextFormat = new TextFormat( Assets.getFont( CardSprite.FONT ).fontName, 20, textColor );
             textField.embedFonts = true;
             textField.selectable = false;
             textField.mouseEnabled = false;
