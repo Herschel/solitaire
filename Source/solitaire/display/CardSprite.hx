@@ -18,7 +18,8 @@ class CardSprite extends Sprite {
     public static inline var WIDTH = 125 / 2.0;
     public static inline var HEIGHT = 175 / 2.0;
 
-    public static inline var FONT = "fonts/arial.ttf";
+    public static var SUIT_FONT = "fonts/NotoSansSymbols-Regular.ttf";
+    public static var RANK_FONT = "fonts/NotoSerif-Regular.ttf";
 
     public var card(default, null): Card;
 
@@ -43,9 +44,10 @@ class CardSprite extends Sprite {
         var text = card.toString();
 
         textField1 = new TextField();
-        textField1.defaultTextFormat = new TextFormat( Assets.getFont(FONT).fontName, 20, textColor );
+        textField1.defaultTextFormat = new TextFormat( Assets.getFont( RANK_FONT ).fontName, 20, textColor );
         textField1.embedFonts = true;
         textField1.text = text;
+        textField1.setTextFormat( new TextFormat( Assets.getFont( SUIT_FONT ).fontName ), 1 );
         textField1.selectable = false;
         textField1.x = WIDTH * 0.1;
         textField1.y = HEIGHT * 0.1;
@@ -54,9 +56,10 @@ class CardSprite extends Sprite {
         addChild( textField1 );
 
         textField2 = new TextField();
-        textField2.defaultTextFormat = new TextFormat( Assets.getFont(FONT).fontName, 20, textColor );
+        textField2.defaultTextFormat = new TextFormat( Assets.getFont( RANK_FONT ).fontName, 20, textColor );
         textField2.embedFonts = true;
         textField2.text = text;
+        textField2.setTextFormat( new TextFormat( Assets.getFont( SUIT_FONT ).fontName ), 1 );
         textField2.selectable = false;
         textField2.rotation = 180;
         textField2.x = WIDTH * 0.9;
