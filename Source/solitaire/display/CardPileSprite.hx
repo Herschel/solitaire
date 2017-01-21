@@ -13,7 +13,19 @@ class CardPileSprite extends Sprite {
         return v;
     }
 
-    public var pile(default, null): CardPile;
+    public var pile(default, set): Null<CardPile>;
+    function set_pile(v) {
+        if( pile != null ) {
+            pile.removeEventListener( Event.CHANGE, onPileChange );
+        }
+        pile = v;
+        if( pile != null ) {
+            pile.addEventListener( Event.CHANGE, onPileChange );
+        }
+        refreshDisplay();
+        return v;
+    }
+
 
     public var numCards(get, never): Int;
     inline function get_numCards() { return pile.numCards; }
@@ -33,11 +45,13 @@ class CardPileSprite extends Sprite {
         super();
 
         this.pile = pile;
-        pile.addEventListener( Event.CHANGE, function(_) refreshDisplay() );
-
         displayStyle = Stack;
 
         addEventListener( MouseEvent.CLICK, onClick );
+    }
+
+    function onPileChange( _ ) {
+        refreshDisplay();
     }
 
     public function refreshDisplay() {
@@ -49,9 +63,10 @@ class CardPileSprite extends Sprite {
         }
 
         graphics.clear();
+        graphics.lineStyle();
 
         cards = [];
-        var numCards = pile.numCards;
+        var numCards = if( pile != null ) pile.numCards else 0;
         if( numCards > 0 )
         {
             if( maxCardsToDisplay > 0 && numCards > maxCardsToDisplay ) {
@@ -64,22 +79,37 @@ class CardPileSprite extends Sprite {
 
                 switch( displayStyle ) {
                     case Stack:
+                        graphics.beginFill( 0, 0.0 );
+                        graphics.drawRect( 0, 0, CardSprite.WIDTH, CardSprite.HEIGHT );
+                        graphics.endFill();
+
                         cardSprite.x = i * 5;
                         cardSprite.y = i * 5;
 
                     case HorizontalFan( padding ):
+
+                        graphics.beginFill( 0, 0.0 );
+                        graphics.drawRect( 0, 0, padding * (i + 3) + CardSprite.WIDTH, CardSprite.HEIGHT );
+                        graphics.endFill();
+
                         cardSprite.x = i * padding;
 
                     case VerticalFan( padding ):
+
+                        graphics.beginFill( 0, 0.0 );
+                        graphics.drawRect( 0, 0, CardSprite.WIDTH, padding * (i + 3) + CardSprite.HEIGHT );
+                        graphics.endFill();
+
                         cardSprite.y = i * padding;
                 }
 
-                addChild(cardSprite);
+                addChild( cardSprite );
+                cardSprite.pileSprite = this;
                 cards.push( cardSprite );
             }
         } else if( drawBorderWhenEmpty ) {
             graphics.lineStyle( 2.0, 0xaaaaaa );
-            graphics.beginFill( 0xffffff, 0.0 );
+            graphics.beginFill( 0xffffff, 0.25 );
             graphics.drawRoundRect( 0, 0, CardSprite.WIDTH, CardSprite.HEIGHT, 10 );
             graphics.endFill();
         }
@@ -90,13 +120,11 @@ class CardPileSprite extends Sprite {
     }
 
     public function peek( i: Int ): Null<Card> {
-        return pile.peek( i );
+        return if( pile != null ) pile.peek( i ) else null;
     }
 
     function onClick( _ ) {
-        if( numCards == 0 ) {
-            dispatchEvent( new CardEvent( CardEvent.CLICK, null, this ) );
-        }
+        dispatchEvent( CardEvent.createPileClickEvent( this ) );
     }
 }
 

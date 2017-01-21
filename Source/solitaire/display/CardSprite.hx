@@ -1,6 +1,7 @@
 package solitaire.display;
 
 import openfl.Assets;
+import openfl.display.Bitmap;
 import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
@@ -15,16 +16,26 @@ typedef Foo = {
 }
 
 class CardSprite extends Sprite {
-    public static inline var WIDTH = 125 / 2.0;
-    public static inline var HEIGHT = 175 / 2.0;
+    public static inline var WIDTH = 125 / 1.5;
+    public static inline var HEIGHT = 175 / 1.5;
 
     public static var SUIT_FONT = "fonts/NotoSansSymbols-Regular.ttf";
     public static var RANK_FONT = "fonts/NotoSerif-Regular.ttf";
 
     public var card(default, null): Card;
+    public var image(default, null): Bitmap;
 
-    var textField1: TextField;
-    var textField2: TextField;
+    @:allow( solitaire.display.CardPileSprite )
+    public var pileSprite(default, null): Null<CardPileSprite>;
+    public var pile(get, never): Null<CardPile>;
+    inline function get_pile() {
+        if( pileSprite != null ) {
+            return pileSprite.pile;
+        }
+
+        return null;
+    }
+
 
     public function new( card: Card ) {
         super();
@@ -35,6 +46,7 @@ class CardSprite extends Sprite {
 
         this.card = card;
 
+        /*
         var suit = 0;
         var textColor = switch( card.suit ) {
             case Hearts, Diamonds:  0xffff0000;
@@ -47,7 +59,7 @@ class CardSprite extends Sprite {
         textField1.defaultTextFormat = new TextFormat( Assets.getFont( RANK_FONT ).fontName, 20, textColor );
         textField1.embedFonts = true;
         textField1.text = text;
-        textField1.setTextFormat( new TextFormat( Assets.getFont( SUIT_FONT ).fontName ), 1 );
+        textField1.setTextFormat( new TextFormat( Assets.getFont( SUIT_FONT ).fontName ), text.length - 1 );
         textField1.selectable = false;
         textField1.x = WIDTH * 0.1;
         textField1.y = HEIGHT * 0.1;
@@ -59,22 +71,25 @@ class CardSprite extends Sprite {
         textField2.defaultTextFormat = new TextFormat( Assets.getFont( RANK_FONT ).fontName, 20, textColor );
         textField2.embedFonts = true;
         textField2.text = text;
-        textField2.setTextFormat( new TextFormat( Assets.getFont( SUIT_FONT ).fontName ), 1 );
+        textField2.setTextFormat( new TextFormat( Assets.getFont( SUIT_FONT ).fontName ), text.length - 1 );
         textField2.selectable = false;
         textField2.rotation = 180;
         textField2.x = WIDTH * 0.9;
         textField2.y = HEIGHT * 0.9;
         textField2.mouseEnabled = false;
         textField2.autoSize = openfl.text.TextFieldAutoSize.LEFT;
-        addChild( textField2 );
+        addChild( textField2 );*/
 
         draw();
 
         card.addEventListener( Event.CHANGE, onCardChange );
 
         addEventListener( MouseEvent.CLICK, onClick );
+        addEventListener( MouseEvent.DOUBLE_CLICK, onDoubleClick );
         addEventListener( MouseEvent.MOUSE_DOWN, onMouseDown );
         addEventListener( MouseEvent.MOUSE_UP, onMouseUp );
+
+        doubleClickEnabled = true;
     }
 
     function onCardChange( _ ) {
@@ -82,27 +97,52 @@ class CardSprite extends Sprite {
     }
 
     function draw() {
-        graphics.clear();
-
-        if( card != null )
-        {
-            graphics.lineStyle( 2.0, 0x000000 );
-            if( card.facing == FaceUp ) {
-                graphics.beginFill( 0xffffff, 1.0 );
-            } else {
-                graphics.beginFill( 0x3333ff, 1.0 );
-            }
-            graphics.drawRoundRect( 0, 0, WIDTH, HEIGHT, 10 );
-            graphics.endFill();
+        if( image != null ) {
+            removeChild( image );
         }
 
-        textField1.visible = card.facing == FaceUp;
-        textField2.visible = card.facing == FaceUp;
+        var imageId = if( card.facing == FaceDown ) {
+            "art/back.png";
+        } else {
+            var rankName = switch( card.rank ) {
+                case Ace:   "01";
+                case Two:   "02";
+                case Three: "03";
+                case Four:  "04";
+                case Five:  "05";
+                case Six:   "06";
+                case Seven: "07";
+                case Eight: "08";
+                case Nine:  "09";
+                case Ten:   "10";
+                case Jack:  "11";
+                case Queen: "12";
+                case King:  "13";
+            };
+
+            var suitName = switch( card.suit ) {
+                case Hearts:   "h";
+                case Diamonds: "d";
+                case Spades:   "s";
+                case Clubs:    "c";
+            };
+
+             'art/${rankName}${suitName}.png';
+         };
+
+        var bitmapData = Assets.getBitmapData( imageId );
+        image = new Bitmap( bitmapData, flash.display.PixelSnapping.AUTO, true );
+        addChild( image );
+
+        image.scaleX = image.scaleY = Math.min( WIDTH / bitmapData.width, HEIGHT / bitmapData.height );
     }
 
     function onClick( event ) {
         dispatchEvent( new CardEvent( CardEvent.CLICK, this ) );
-        event.stopImmediatePropagation();
+    }
+
+    function onDoubleClick( event ) {
+        dispatchEvent( new CardEvent( CardEvent.CARD_DOUBLE_CLICK, this ) );
     }
 
     function onMouseUp( event ) {
