@@ -31,6 +31,7 @@ class Game extends Sprite {
     var dragY: Float;
 
     var table: CardTable;
+    var background: Bitmap;
 
     public function new() {
         super();
@@ -52,7 +53,7 @@ class Game extends Sprite {
     /* Create New Game button. */
     function createUi() {
         // Make background.
-        var background = new Bitmap( Assets.getBitmapData( "art/felt_green.jpg" ) );
+        background = new Bitmap( Assets.getBitmapData( "art/felt_green.jpg" ), PixelSnapping.AUTO, true );
         addChild( background );
 
         var table = new CardTable( this );
@@ -95,8 +96,16 @@ class Game extends Sprite {
     /* Layout the UI when the stage resizes. */
     function onResize( _ ) {
         var gameWidth = CardSprite.WIDTH * 9.5;
-        var scale = stage.stageWidth / gameWidth;
+        var gameHeight = CardSprite.HEIGHT * 5;
+        var scale = Math.min( stage.stageWidth / gameWidth, stage.stageHeight / gameHeight );
         scaleX = scaleY = scale;
+        x = Math.max( 0, (stage.stageWidth - gameWidth * scale) * 0.5 );
+        background.x = -2 * x;
+        var backgroundScale = Math.max(
+            background.bitmapData.width / (stage.stageWidth * scale),
+            background.bitmapData.height / (stage.stageHeight * scale)
+        );
+        background.scaleX = background.scaleY = backgroundScale;
     }
 
     /* Play a randomized card sound. */
