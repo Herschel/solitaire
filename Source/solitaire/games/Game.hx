@@ -9,6 +9,7 @@ import solitaire.commands.*;
 import solitaire.display.*;
 import solitaire.events.*;
 import solitaire.model.*;
+import solitaire.ui.*;
 
 class Game extends Sprite {
     var cardX: Float;
@@ -29,7 +30,7 @@ class Game extends Sprite {
     var dragX: Float;
     var dragY: Float;
 
-    var cardsToSprites: Map<Card, CardSprite>;
+    var table: CardTable;
 
     public function new() {
         super();
@@ -54,85 +55,33 @@ class Game extends Sprite {
         var background = new Bitmap( Assets.getBitmapData( "art/felt_green.jpg" ) );
         addChild( background );
 
+        var table = new CardTable( this );
+        addChild( table );
+
         // Make New Game button.
-        var button = new Sprite();
-
-        // Draw button art.
-        button.graphics.beginFill( 0x0000ff );
-        button.graphics.drawRoundRect( 0, 0, 100, 50, 10 );
-        button.graphics.endFill();
-
-        var textField = new TextField();
-        textField.defaultTextFormat = new TextFormat( Assets.getFont( CardSprite.RANK_FONT ).fontName, 16, 0xffffff );
-        textField.text = "New Game";
-        textField.embedFonts = true;
-        textField.mouseEnabled = false;
-        textField.autoSize = TextFieldAutoSize.CENTER;
-        textField.x = (button.width - textField.width) * 0.5;
-        textField.y = (button.height - textField.height) * 0.5;
-        button.addChild( textField );
+        var button = new Button( "New Game" );
         button.scaleX = button.scaleY = 0.8;
-
         button.x = 720;
         button.y = 30;
-
-        button.buttonMode = true;
-
         addChild( button );
-
         button.addEventListener( MouseEvent.CLICK, function( _ ) newGame() );
 
         // Make Undo button.
         var button = new Sprite();
 
         // Draw button art.
-        button.graphics.beginFill( 0x0000ff );
-        button.graphics.drawRoundRect( 0, 0, 100, 50, 10 );
-        button.graphics.endFill();
-
-        var textField = new TextField();
-        textField.defaultTextFormat = new TextFormat( Assets.getFont( CardSprite.RANK_FONT ).fontName, 16, 0xffffff );
-        textField.text = "Undo";
-        textField.embedFonts = true;
-        textField.mouseEnabled = false;
-        textField.autoSize = TextFieldAutoSize.CENTER;
-        textField.x = (button.width - textField.width) * 0.5;
-        textField.y = (button.height - textField.height) * 0.5;
-        button.addChild( textField );
+        var button = new Button( "Undo" );
         button.scaleX = button.scaleY = 0.8;
-
         button.x = 720;
         button.y = 80;
-
-        button.buttonMode = true;
-
         addChild( button );
         button.addEventListener( MouseEvent.CLICK, function( _ ) undo() );
 
         // Make Redo button.
-        var button = new Sprite();
-
-        // Draw button art.
-        button.graphics.beginFill( 0x0000ff );
-        button.graphics.drawRoundRect( 0, 0, 100, 50, 10 );
-        button.graphics.endFill();
-
-        var textField = new TextField();
-        textField.defaultTextFormat = new TextFormat( Assets.getFont( CardSprite.RANK_FONT ).fontName, 16, 0xffffff );
-        textField.text = "Redo";
-        textField.embedFonts = true;
-        textField.mouseEnabled = false;
-        textField.autoSize = TextFieldAutoSize.CENTER;
-        textField.x = (button.width - textField.width) * 0.5;
-        textField.y = (button.height - textField.height) * 0.5;
-        button.addChild( textField );
+        var button = new Button( "Redo" );
         button.scaleX = button.scaleY = 0.8;
-
         button.x = 720;
         button.y = 130;
-
-        button.buttonMode = true;
-
         addChild( button );
         button.addEventListener( MouseEvent.CLICK, function( _ ) redo() );
 
@@ -152,6 +101,9 @@ class Game extends Sprite {
 
     /* Play a randomized card sound. */
     function playCardSound() {
+        var cardSound = Std.int( Math.random() * 2 ) + 1;
+        var sound = Assets.getSound( 'sounds/deal-card-${cardSound}.wav' );
+        sound.play();
     }
 
     /* Undo the previous user action. */

@@ -10,6 +10,7 @@ import solitaire.display.*;
 import solitaire.events.*;
 import solitaire.games.*;
 import solitaire.model.*;
+import solitaire.ui.*;
 
 class Main extends Sprite {
     public function new() {
@@ -20,12 +21,11 @@ class Main extends Sprite {
 
         createLog();
 
-        game = new Klondike();
-        addChild( game );
-        game.newGame();
+        menu = new MainMenu();
+        addChild( menu );
     }
 
-    var game: Game;
+    var menu: MainMenu;
 
     function createLog() {
         logTextField = new TextField();

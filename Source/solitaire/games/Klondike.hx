@@ -138,8 +138,10 @@ class Klondike extends Game {
     function onStockClick( _ ) {
         if( stock.numCards > 0 ) {
             commandQueue.execute( new DealStockCommand( stock, waste ) );
+            playCardSound();
         } else {
             commandQueue.execute( new ResetStockCommand( stock, waste ) );
+            playCardSound();
         }
     }
 
@@ -158,6 +160,7 @@ class Klondike extends Game {
         if( card != null && card.facing == FaceDown ) {
             if( event.cardIndex == 0 && card != null ) {
                 commandQueue.execute( new FlipCardCommand( card ) );
+                playCardSound();
             }
             return;
         }
@@ -191,6 +194,7 @@ class Klondike extends Game {
             if( allowMove ) {
                 var command = new MoveSequenceCommand( event.pile, [card], foundation );
                 commandQueue.execute( command );
+                playCardSound();
             }
         }
     }
@@ -211,6 +215,7 @@ class Klondike extends Game {
             if( allowMove ) {
                 var command = new MoveSequenceCommand( draggingCards[0].parentPile, [draggingCards[0].card.card], foundation );
                 commandQueue.execute( command );
+                playCardSound();
             }
         }
     }
@@ -268,7 +273,7 @@ class Klondike extends Game {
     }
 
     public override function handleCardEvent( event: CardEvent ) {
-        if( event.type == CardEvent.FLIPPED && event.pile != null ) {
+        /*if( event.type == CardEvent.FLIPPED && event.pile != null ) {
             var pileSprites = pileSprites.concat([stockSprite, wasteSprite]);
             for( pileSprite in pileSprites ) {
                 if( pileSprite.pile == event.pile ) {
@@ -282,7 +287,7 @@ class Klondike extends Game {
                     }
                 }
             }
-        }
+        }*/
     }
 
 }

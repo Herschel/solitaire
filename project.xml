@@ -6,8 +6,11 @@
 	
 	<source path="Source" />
 	
+	<haxelib name="actuate" />
 	<haxelib name="openfl" />
 	
 	<assets path="Assets/fonts" rename="fonts" />
+    <assets path="Assets/art" rename="art" />
+    <assets path="Assets/sounds" rename="sounds" />
 
 </project>
